@@ -13,7 +13,10 @@ export default async function PlatformLayout({
 
   return (
     <div className="h-screen flex">
-      <Sidebar />
+      {/* Desktop sidebar - hidden on mobile */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar user={session.user} />
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">

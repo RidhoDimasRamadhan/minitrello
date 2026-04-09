@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  Settings,
   Plus,
   ChevronLeft,
   ChevronRight,
   Star,
   Search,
   LayoutTemplate,
+  UserCircle,
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +21,7 @@ const navItems = [
   { label: "Cari", href: "/search", icon: Search },
   { label: "Starred", href: "/dashboard?filter=starred", icon: Star },
   { label: "Templates", href: "/templates", icon: LayoutTemplate },
+  { label: "Profil", href: "/profile", icon: UserCircle },
 ];
 
 export function Sidebar() {

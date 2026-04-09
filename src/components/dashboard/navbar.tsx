@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, LogOut, User as UserIcon, Bell } from "lucide-react";
+import { Moon, Sun, LogOut, User as UserIcon } from "lucide-react";
+import { NavbarSearch } from "./navbar-search";
+import { NotificationBell } from "./notification-bell";
+import { MobileSidebar } from "./mobile-sidebar";
 
 interface NavbarProps {
   user: {
@@ -23,13 +27,16 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
 
   return (
     <header className="h-16 border-b bg-white dark:bg-gray-950 flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <MobileSidebar />
         <h2 className="text-lg font-semibold hidden sm:block">
           Selamat datang kembali!
         </h2>
+        <NavbarSearch />
       </div>
 
       <div className="flex items-center gap-2">
@@ -42,9 +49,7 @@ export function Navbar({ user }: NavbarProps) {
           <Moon className="absolute h-4.5 w-4.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4.5 w-4.5" />
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -73,7 +78,7 @@ export function Navbar({ user }: NavbarProps) {
               </div>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
               <UserIcon className="mr-2 h-4 w-4" />
               Profil
             </DropdownMenuItem>

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { CommentSchema } from "@/lib/validators";
 import type { ActionState } from "@/types";
+import { notifyBoardMembers } from "./notification";
 
 async function getCurrentUserId() {
   const session = await auth();
@@ -40,6 +41,18 @@ export async function createComment(data: {
       metadata: { content: validated.data.content.slice(0, 100) },
     },
   });
+
+  // Notify board members
+  const user = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
+  const card = await db.card.findUnique({ where: { id: validated.data.cardId }, select: { title: true } });
+  if (user && card) {
+    await notifyBoardMembers(data.boardId, userId, {
+      type: "commented",
+      title: "Komentar baru",
+      message: `${user.name} berkomentar di card "${card.title}"`,
+      link: `/board/${data.boardId}`,
+    });
+  }
 
   revalidatePath(`/board/${data.boardId}`);
   return { success: "Komentar berhasil ditambahkan!" };

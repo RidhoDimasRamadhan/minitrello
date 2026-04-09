@@ -29,6 +29,7 @@ model User {
   createdBoards     Board[]        @relation("BoardCreator")
   createdWorkspaces Workspace[]    @relation("WorkspaceCreator")
   boardStars        BoardStar[]
+  notifications     Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -346,4 +347,22 @@ model Activity {
   @@index([boardId])
   @@index([cardId])
   @@index([userId])
+}
+
+// ─── NOTIFICATION ────────────────────────────────────
+
+model Notification {
+  id      String  @id @default(cuid())
+  type    String  // "assigned", "commented", "due_soon", "mentioned", "invited"
+  title   String
+  message String
+  link    String? // URL to navigate to
+  isRead  Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
 }

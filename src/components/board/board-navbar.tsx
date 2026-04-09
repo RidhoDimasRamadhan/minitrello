@@ -15,18 +15,20 @@ import {
   MoreHorizontal,
   Users,
   Trash2,
-  Copy,
-  Archive,
+  Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { updateBoard, deleteBoard, toggleStarBoard } from "@/actions/board";
 import { inviteBoardMember } from "@/actions/board";
 import { cn } from "@/lib/utils";
+import { BackgroundPicker } from "./background-picker";
 
 interface BoardNavbarProps {
   board: {
     id: string;
     title: string;
+    backgroundColor: string;
+    backgroundImage: string | null;
     stars: { id: string }[];
     members: { user: { id: string; name: string | null; image: string | null } }[];
     workspace: { name: string; slug: string };
@@ -161,6 +163,13 @@ export function BoardNavbar({ board }: BoardNavbarProps) {
           </PopoverContent>
         </Popover>
 
+        {/* Background picker */}
+        <BackgroundPicker
+          boardId={board.id}
+          currentColor={board.backgroundColor}
+          currentImage={board.backgroundImage}
+        />
+
         {/* More options */}
         <Popover>
           <PopoverTrigger
@@ -176,6 +185,13 @@ export function BoardNavbar({ board }: BoardNavbarProps) {
           </PopoverTrigger>
           <PopoverContent align="end" className="w-60">
             <div className="space-y-1">
+              <button
+                onClick={() => router.push(`/board/${board.id}/activity`)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              >
+                <Activity className="h-4 w-4" />
+                Activity Log
+              </button>
               <button
                 onClick={handleDelete}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"

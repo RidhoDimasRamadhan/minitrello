@@ -19,9 +19,9 @@ import { CardComments } from "./card-comments";
 import { CardActivity } from "./card-activity";
 import { CardActions } from "./card-actions";
 import { CardHeader } from "./card-header";
+import { CardAttachments } from "./card-attachments";
 import {
   AlignLeft,
-  Tag,
   CheckSquare,
   MessageSquare,
   Activity,
@@ -121,6 +121,13 @@ export function CardModal() {
                       />
                     </div>
                   ))}
+
+                  {/* Attachments */}
+                  <CardAttachments
+                    cardId={card.id}
+                    boardId={boardId!}
+                    attachments={card.attachments}
+                  />
 
                   {/* Comments */}
                   <div>

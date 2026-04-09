@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useId } from "react";
+import { useState, useCallback, useId, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -25,28 +25,32 @@ import { reorderCards } from "@/actions/card";
 import { POSITION_GAP } from "@/lib/constants";
 import { toast } from "sonner";
 
+type CardType = {
+  id: string;
+  title: string;
+  position: number;
+  listId: string;
+  description: string | null;
+  dueDate: Date | null;
+  isComplete: boolean;
+  coverColor: string | null;
+  labels: { label: { id: string; name: string | null; color: string } }[];
+  assignees: { user: { id: string; name: string | null; image: string | null } }[];
+  checklists: { items: { isChecked: boolean }[] }[];
+  _count: { comments: number; attachments: number };
+};
+
+type ListType = {
+  id: string;
+  title: string;
+  position: number;
+  cards: CardType[];
+};
+
 interface ListContainerProps {
   board: {
     id: string;
-    lists: {
-      id: string;
-      title: string;
-      position: number;
-      cards: {
-        id: string;
-        title: string;
-        position: number;
-        listId: string;
-        description: string | null;
-        dueDate: Date | null;
-        isComplete: boolean;
-        coverColor: string | null;
-        labels: { label: { id: string; name: string | null; color: string } }[];
-        assignees: { user: { id: string; name: string | null; image: string | null } }[];
-        checklists: { items: { isChecked: boolean }[] }[];
-        _count: { comments: number; attachments: number };
-      }[];
-    }[];
+    lists: ListType[];
     labels: { id: string; name: string | null; color: string }[];
   };
 }
@@ -56,7 +60,11 @@ export function ListContainer({ board }: ListContainerProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<"list" | "card" | null>(null);
 
-  // Stable ID to fix hydration mismatch between server/client
+  // Sync with server data when board prop changes (after revalidation)
+  useEffect(() => {
+    setLists(board.lists);
+  }, [board.lists]);
+
   const dndId = useId();
 
   const sensors = useSensors(
@@ -81,6 +89,44 @@ export function ListContainer({ board }: ListContainerProps) {
       return null;
     },
     [lists]
+  );
+
+  // Optimistic: add card to local state instantly
+  const addOptimisticCard = useCallback(
+    (listId: string, card: CardType) => {
+      setLists((prev) =>
+        prev.map((l) =>
+          l.id === listId ? { ...l, cards: [...l.cards, card] } : l
+        )
+      );
+    },
+    []
+  );
+
+  // Optimistic: add list to local state instantly
+  const addOptimisticList = useCallback(
+    (list: ListType) => {
+      setLists((prev) => [...prev, list]);
+    },
+    []
+  );
+
+  // Optimistic: remove list from local state
+  const removeOptimisticList = useCallback(
+    (listId: string) => {
+      setLists((prev) => prev.filter((l) => l.id !== listId));
+    },
+    []
+  );
+
+  // Optimistic: update list title
+  const updateOptimisticListTitle = useCallback(
+    (listId: string, title: string) => {
+      setLists((prev) =>
+        prev.map((l) => (l.id === listId ? { ...l, title } : l))
+      );
+    },
+    []
   );
 
   function handleDragStart(event: DragStartEvent) {
@@ -148,8 +194,6 @@ export function ListContainer({ board }: ListContainerProps) {
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-
-    // Save type BEFORE resetting
     const currentType = activeType;
 
     setActiveId(null);
@@ -174,7 +218,6 @@ export function ListContainer({ board }: ListContainerProps) {
       const result = await reorderLists(board.id, items);
       if (result.error) toast.error(result.error);
     } else if (currentType === "card") {
-      // Persist all card positions from current local state
       const items: { id: string; position: number; listId: string }[] = [];
       for (const list of lists) {
         list.cards.forEach((card, i) => {
@@ -210,10 +253,17 @@ export function ListContainer({ board }: ListContainerProps) {
           strategy={horizontalListSortingStrategy}
         >
           {lists.map((list) => (
-            <ListItem key={list.id} list={list} boardId={board.id} />
+            <ListItem
+              key={list.id}
+              list={list}
+              boardId={board.id}
+              onAddCard={addOptimisticCard}
+              onDeleteList={removeOptimisticList}
+              onUpdateListTitle={updateOptimisticListTitle}
+            />
           ))}
         </SortableContext>
-        <ListForm boardId={board.id} />
+        <ListForm boardId={board.id} onAddList={addOptimisticList} />
       </div>
 
       <DragOverlay>

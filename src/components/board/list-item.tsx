@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -38,11 +38,15 @@ interface ListItemProps {
     }[];
   };
   boardId: string;
+  onAddCard?: (listId: string, card: any) => void;
+  onDeleteList?: (listId: string) => void;
+  onUpdateListTitle?: (listId: string, title: string) => void;
 }
 
-export function ListItem({ list, boardId }: ListItemProps) {
+export function ListItem({ list, boardId, onAddCard, onDeleteList, onUpdateListTitle }: ListItemProps) {
   const [title, setTitle] = useState(list.title);
   const [isEditing, setIsEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const {
     attributes,
@@ -62,11 +66,14 @@ export function ListItem({ list, boardId }: ListItemProps) {
   async function handleTitleSave() {
     setIsEditing(false);
     if (title.trim() && title !== list.title) {
-      const result = await updateList(list.id, { title });
-      if (result.error) {
-        toast.error(result.error);
-        setTitle(list.title);
-      }
+      onUpdateListTitle?.(list.id, title);
+      startTransition(async () => {
+        const result = await updateList(list.id, { title });
+        if (result.error) {
+          toast.error(result.error);
+          setTitle(list.title);
+        }
+      });
     } else {
       setTitle(list.title);
     }
@@ -74,15 +81,20 @@ export function ListItem({ list, boardId }: ListItemProps) {
 
   async function handleDelete() {
     if (!confirm("Yakin ingin menghapus list ini beserta semua card-nya?")) return;
-    const result = await deleteList(list.id);
-    if (result.error) toast.error(result.error);
-    else toast.success(result.success);
+    onDeleteList?.(list.id);
+    startTransition(async () => {
+      const result = await deleteList(list.id);
+      if (result.error) toast.error(result.error);
+      else toast.success(result.success);
+    });
   }
 
   async function handleCopy() {
-    const result = await copyList(list.id);
-    if (result.error) toast.error(result.error);
-    else toast.success(result.success);
+    startTransition(async () => {
+      const result = await copyList(list.id);
+      if (result.error) toast.error(result.error);
+      else toast.success(result.success);
+    });
   }
 
   return (
@@ -166,7 +178,7 @@ export function ListItem({ list, boardId }: ListItemProps) {
 
       {/* Add card */}
       <div className="p-2 pt-1">
-        <CardForm listId={list.id} boardId={boardId} />
+        <CardForm listId={list.id} boardId={boardId} onAddCard={onAddCard} />
       </div>
     </div>
   );

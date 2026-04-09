@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X } from "lucide-react";
@@ -9,24 +9,44 @@ import { toast } from "sonner";
 
 interface ListFormProps {
   boardId: string;
+  onAddList?: (list: {
+    id: string;
+    title: string;
+    position: number;
+    cards: [];
+  }) => void;
 }
 
-export function ListForm({ boardId }: ListFormProps) {
+export function ListForm({ boardId, onAddList }: ListFormProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const result = await createList({ title, boardId });
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      setTitle("");
-      inputRef.current?.focus();
-    }
+    const listTitle = title.trim();
+    setTitle("");
+    inputRef.current?.focus();
+
+    // Optimistic: add list to UI instantly
+    const tempId = `temp-${Date.now()}`;
+    onAddList?.({
+      id: tempId,
+      title: listTitle,
+      position: Date.now(),
+      cards: [],
+    });
+
+    // Server action in background
+    startTransition(async () => {
+      const result = await createList({ title: listTitle, boardId });
+      if (result.error) {
+        toast.error(result.error);
+      }
+    });
   }
 
   if (!isAdding) {

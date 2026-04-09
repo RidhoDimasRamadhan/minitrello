@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "sonner";
 import { ModalProvider } from "@/components/providers/modal-provider";
+import { KeyboardProvider } from "@/components/providers/keyboard-provider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -29,7 +30,9 @@ export default function RootLayout({
         <ThemeProvider>
           <SessionProvider>
             <QueryProvider>
-              {children}
+              <KeyboardProvider>
+                {children}
+              </KeyboardProvider>
               <ModalProvider />
               <Toaster richColors position="bottom-right" />
             </QueryProvider>

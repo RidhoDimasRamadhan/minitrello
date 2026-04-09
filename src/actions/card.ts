@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { CardSchema, CardUpdateSchema } from "@/lib/validators";
 import { POSITION_GAP } from "@/lib/constants";
 import type { ActionState } from "@/types";
+import { createNotification } from "./notification";
 
 async function getCurrentUserId() {
   const session = await auth();
@@ -297,6 +298,21 @@ export async function toggleCardAssignee(
     await db.cardAssignee.delete({ where: { id: existing.id } });
   } else {
     await db.cardAssignee.create({ data: { cardId, userId: targetUserId } });
+
+    // Notify assigned user
+    if (targetUserId !== userId) {
+      const card = await db.card.findUnique({ where: { id: cardId }, select: { title: true } });
+      const assigner = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
+      if (card && assigner) {
+        await createNotification({
+          userId: targetUserId,
+          type: "assigned",
+          title: "Kamu di-assign ke card",
+          message: `${assigner.name} menambahkan kamu ke card "${card.title}"`,
+          link: `/board/${boardId}`,
+        });
+      }
+    }
   }
 
   revalidatePath(`/board/${boardId}`);
